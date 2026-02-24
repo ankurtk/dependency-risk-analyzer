@@ -7,3 +7,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [Unreleased]
 
 - Initial release
+
+## 0.0.2
+- Major performance improvement
+- Dependency usage scanning optimized (single-pass scanning)
+- Faster loading for large projects
