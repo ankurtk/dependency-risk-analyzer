@@ -12,3 +12,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Major performance improvement
 - Dependency usage scanning optimized (single-pass scanning)
 - Faster loading for large projects
+
+## 0.0.3
+- Instant file lookup when clicking dependency
+- Eliminated workspace rescan on click
+- Major performance improvement for large projects
