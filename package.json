@@ -2,7 +2,7 @@
   "name": "dependecy-risk-analyzer",
   "displayName": "Dependency Risk Analyzer",
   "description": "Analyze dependency risk, usage and project health in VS Code",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "ankur-dev",
   "license": "MIT",
   "engines": {
