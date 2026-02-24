@@ -11,7 +11,7 @@
     "Other"
   ],
   "activationEvents": [
-    "*"
+    "onView:dependencyListView"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -40,6 +40,10 @@
       }
     ]
   },
+  "repository": {
+  "type": "git",
+  "url": "https://github.com/ankurtk/dependency-risk-analyzer"
+},
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
