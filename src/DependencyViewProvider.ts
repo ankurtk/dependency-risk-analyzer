@@ -159,7 +159,7 @@ export class DependencyViewProvider implements vscode.WebviewViewProvider {
 
     entries.forEach(([name, version], index) => {
       const latest = latestVersions[index];
-      const usage = usageCounts[index];
+      const usage = usageMap[name];
 
       let riskLabel = "UNKNOWN";
       let riskClass = "neutral";
