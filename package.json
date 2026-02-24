@@ -4,6 +4,7 @@
   "description": "Analyze dependency risk, usage and project health in VS Code",
   "version": "0.0.1",
   "publisher": "ankur-dev",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.109.0"
   },
