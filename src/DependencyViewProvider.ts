@@ -46,8 +46,8 @@ export class DependencyViewProvider implements vscode.WebviewViewProvider {
     let upToDateCount = 0;
 
     // fetch usage counts in parallel
-    const usageCounts = await Promise.all(
-      entries.map(([name]) => this.countDependencyUsage(name)),
+    const usageMap = await this.getAllDependencyUsage(
+      entries.map(([name]) => name),
     );
 
     // fetch latest versions in parallel
@@ -56,7 +56,7 @@ export class DependencyViewProvider implements vscode.WebviewViewProvider {
     );
     const processed = entries.map(([name, version], index) => {
       const latest = latestVersions[index];
-      const usage = usageCounts[index];
+      const usage = usageMap[name] || 0;
 
       let riskLabel = "UNKNOWN";
       let riskClass = "neutral";
@@ -480,5 +480,32 @@ export class DependencyViewProvider implements vscode.WebviewViewProvider {
     }
 
     return result;
+  }
+  private async getAllDependencyUsage(
+    depNames: string[],
+  ): Promise<Record<string, number>> {
+    const usageMap: Record<string, number> = {};
+    depNames.forEach((name) => (usageMap[name] = 0));
+
+    const files = await vscode.workspace.findFiles(
+      "**/*.{js,ts,jsx,tsx}",
+      "**/node_modules/**",
+    );
+
+    for (const file of files) {
+      const doc = await vscode.workspace.openTextDocument(file);
+      const text = doc.getText();
+
+      depNames.forEach((dep) => {
+        const regex = new RegExp(
+          `(from\\s+['"]${dep}['"]|require\\(['"]${dep}['"]\\))`,
+        );
+        if (regex.test(text)) {
+          usageMap[dep]++;
+        }
+      });
+    }
+
+    return usageMap;
   }
 }
