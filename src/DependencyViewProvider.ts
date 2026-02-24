@@ -3,6 +3,8 @@ import * as vscode from "vscode";
 export class DependencyViewProvider implements vscode.WebviewViewProvider {
   constructor(private readonly context: vscode.ExtensionContext) {}
 
+  private dependencyFileMap: Record<string, string[]> = {};
+
   async resolveWebviewView(webviewView: vscode.WebviewView) {
     webviewView.webview.options = { enableScripts: true };
     webviewView.webview.onDidReceiveMessage(async (message) => {
@@ -46,7 +48,7 @@ export class DependencyViewProvider implements vscode.WebviewViewProvider {
     let upToDateCount = 0;
 
     // fetch usage counts in parallel
-    const usageMap = await this.getAllDependencyUsage(
+    this.dependencyFileMap = await this.getAllDependencyUsageMap(
       entries.map(([name]) => name),
     );
 
@@ -56,7 +58,7 @@ export class DependencyViewProvider implements vscode.WebviewViewProvider {
     );
     const processed = entries.map(([name, version], index) => {
       const latest = latestVersions[index];
-      const usage = usageMap[name] || 0;
+      const usage = this.dependencyFileMap[name]?.length || 0;
 
       let riskLabel = "UNKNOWN";
       let riskClass = "neutral";
@@ -159,7 +161,7 @@ export class DependencyViewProvider implements vscode.WebviewViewProvider {
 
     entries.forEach(([name, version], index) => {
       const latest = latestVersions[index];
-      const usage = usageMap[name];
+      const usage = this.dependencyFileMap[name]?.length || 0;
 
       let riskLabel = "UNKNOWN";
       let riskClass = "neutral";
@@ -435,57 +437,14 @@ export class DependencyViewProvider implements vscode.WebviewViewProvider {
 
     return { label: "UP TO DATE", color: "gray" };
   }
-  private async countDependencyUsage(pkg: string): Promise<number> {
-    const files = await vscode.workspace.findFiles(
-      "**/*.{js,ts,jsx,tsx}",
-      "**/node_modules/**",
-    );
-
-    let count = 0;
-
-    const importRegex = new RegExp(
-      `(from\\s+['"]${pkg}['"]|require\\(['"]${pkg}['"]\\))`,
-    );
-
-    for (const file of files) {
-      const doc = await vscode.workspace.openTextDocument(file);
-      const text = doc.getText();
-
-      if (importRegex.test(text)) {
-        count++;
-      }
-    }
-
-    return count;
-  }
   private async getFilesUsingDependency(pkg: string): Promise<string[]> {
-    const files = await vscode.workspace.findFiles(
-      "**/*.{js,ts,jsx,tsx}",
-      "**/node_modules/**",
-    );
-
-    const result: string[] = [];
-
-    const importRegex = new RegExp(
-      `(from\\s+['"]${pkg}['"]|require\\(['"]${pkg}['"]\\))`,
-    );
-
-    for (const file of files) {
-      const doc = await vscode.workspace.openTextDocument(file);
-      const text = doc.getText();
-
-      if (importRegex.test(text)) {
-        result.push(file.fsPath);
-      }
-    }
-
-    return result;
+    return this.dependencyFileMap[pkg] || [];
   }
-  private async getAllDependencyUsage(
+  private async getAllDependencyUsageMap(
     depNames: string[],
-  ): Promise<Record<string, number>> {
-    const usageMap: Record<string, number> = {};
-    depNames.forEach((name) => (usageMap[name] = 0));
+  ): Promise<Record<string, string[]>> {
+    const usageMap: Record<string, string[]> = {};
+    depNames.forEach((name) => (usageMap[name] = []));
 
     const files = await vscode.workspace.findFiles(
       "**/*.{js,ts,jsx,tsx}",
@@ -497,15 +456,20 @@ export class DependencyViewProvider implements vscode.WebviewViewProvider {
       const text = doc.getText();
 
       depNames.forEach((dep) => {
+        const safe = this.escapeRegex(dep);
         const regex = new RegExp(
-          `(from\\s+['"]${dep}['"]|require\\(['"]${dep}['"]\\))`,
+          `(from\\s+['"]${safe}['"]|require\\(['"]${safe}['"]\\))`,
         );
+
         if (regex.test(text)) {
-          usageMap[dep]++;
+          usageMap[dep].push(file.fsPath);
         }
       });
     }
 
     return usageMap;
+  }
+  private escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 }
